@@ -1,0 +1,52 @@
+﻿.navbar
+{
+	margin-bottom: 0px;
+}
+.baseContainer
+{
+	padding: 8px;
+}
+p.padded-info
+{
+	padding: 15px;
+}
+span.bytes_B
+{
+}
+span.bytes_KB
+{
+	background-color: rgba(255, 255, 0, 0.28);
+}
+span.bytes_MB
+{
+	background-color: rgba(255, 138, 0, 0.28);
+}
+span.bytes_GB, span.bytes_TB, span.bytes_PB, span.bytes_EB, span.bytes_ZB, span.bytes_YB 
+{
+	background-color: #FF0000;
+	color: #FFFFFF;
+}
+span.bits_low
+{
+}
+span.bits_med
+{
+	background-color: rgba(255, 255, 0, 0.28);
+}
+span.bits_high
+{
+	background-color: rgba(255, 138, 0, 0.28);
+}
+span.bits_veryhigh
+{
+	background-color: rgba(255, 0, 0, 0.28);
+}
+span.bits_extreme 
+{
+	background-color: #FF0000;
+	color: #FFFFFF;
+}
+#DataTableWrapper
+{
+    max-width: 1000px;
+}
