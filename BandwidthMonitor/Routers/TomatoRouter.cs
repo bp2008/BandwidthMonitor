@@ -64,6 +64,12 @@ namespace BandwidthMonitor.Routers
 						Dictionary<string, BandwidthRecord> previousRecords = new Dictionary<string, BandwidthRecord>();
 						Stopwatch swDevList = new Stopwatch();
 						response = wru.POST(Address + "update.cgi", new string[] { "exec", "devlist", "_http_id", http_id });
+						if (string.IsNullOrWhiteSpace(response.str))
+						{
+							Logger.Info("Received null or whitespace response instead of expected devlist");
+							Thread.Sleep(30000);
+							continue;
+						}
 						HandleDevListResponse(response.str);
 						swDevList.Start();
 						while (true)
@@ -79,13 +85,12 @@ namespace BandwidthMonitor.Routers
 
 								DeviceInfo device;
 								BandwidthRecord prev;
+
 								if (!devices.TryGetValue(ip, out device))
-								{
 									devices[ip] = device = new DeviceInfo(ip);
+
+								if (!previousRecords.TryGetValue(ip, out prev))
 									previousRecords[ip] = prev = new BandwidthRecord(time, downloadRaw, uploadRaw);
-								}
-								else
-									prev = previousRecords[ip];
 
 								device.Name = GetName(device.Address);
 								device.MAC = GetMac(device.Address);
@@ -195,11 +200,12 @@ namespace BandwidthMonitor.Routers
 			{
 				using (WebClient wc = new WebClient())
 				{
+					string MAC = "";
 					while (true)
 					{
 						try
 						{
-							while (macVendorRequestQueue.TryDequeue(out string MAC))
+							while (macVendorRequestQueue.TryDequeue(out MAC))
 							{
 								if (macToVendorMap.ContainsKey(MAC))
 									continue;
@@ -210,9 +216,19 @@ namespace BandwidthMonitor.Routers
 							Thread.Sleep(2000);
 						}
 						catch (ThreadAbortException) { throw; }
+						catch (WebException ex)
+						{
+							if (ex.Response != null && ex.Response is HttpWebResponse && ((HttpWebResponse)ex.Response).StatusCode == HttpStatusCode.NotFound)
+								macToVendorMap[MAC] = "Vendor not found";
+							else
+							{
+								Logger.Debug(ex, MAC);
+								Thread.Sleep(5000);
+							}
+						}
 						catch (Exception ex)
 						{
-							Logger.Debug(ex);
+							Logger.Debug(ex, MAC);
 							Thread.Sleep(5000);
 						}
 					}

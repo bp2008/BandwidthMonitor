@@ -343,6 +343,43 @@
 				series: graphableData
 			});
 	}
+	function GetTooltip(params)
+	{
+		//return GetTimeStr(params.value[0]) + " : " + params.value[1].toFixed(1) + " Kbps";
+		var time = lastHoveredTime = params[0].value[0].getTime();
+		var sb = new Array();
+		var bwTime = bwByTime[time];
+		var devices = new Array();
+		if (bwTime)
+		{
+			for (address in bwTime)
+				if (!address.endsWith(".0"))
+					devices.push(bwTime[address]);
+			devices.sort(function (a, b)
+			{
+				return (b.Download + b.Upload) - (a.Download + a.Upload);
+			});
+			for (var i = 0; i < devices.length && i < 10; i++)
+			{
+				var device = devices[i];
+				var name = device.Address;
+				var bwDevice = bwDevices[device.Address];
+				if (bwDevice)
+				{
+					if (bwDevice.Name && bwDevice.Name != "localhost")
+						name += ": " + bwDevice.Name;
+					else if (bwDevice.Vendor)
+						name += ": " + bwDevice.Vendor;
+				}
+				//break;
+				sb.push(name.setLength(35, ' ') + ": " + formatBytes(device.Download) + " / " + formatBytes(device.Upload));
+			}
+		}
+		var timeStr = GetTimeStr(params[0].value[0]);
+		return '<div style="white-space: pre-wrap; font-family: Consolas, monospace;">' + timeStr + ': ' + params[0].value[1] + ' Kbps Download<br>'
+			+ ''.padLeft(timeStr.length + 2, ' ') + params[1].value[1] + ' Kbps Upload'
+			+ '<hr style="margin: 0px;">' + sb.join('<br>') + '</div>';
+	}
 	var lastHoveredTime = 0;
 	function RenderChart()
 	{
@@ -356,34 +393,7 @@
 			},
 			tooltip: {
 				trigger: 'axis',
-				formatter: function (params)
-				{
-					//return GetTimeStr(params.value[0]) + " : " + params.value[1].toFixed(1) + " Kbps";
-					var time = lastHoveredTime = params[0].value[0].getTime();
-					var sb = new Array();
-					var bwTime = bwByTime[time];
-					var devices = new Array();
-					if (bwTime)
-					{
-						for (address in bwTime)
-							if (!address.endsWith(".0"))
-								devices.push(bwTime[address]);
-						devices.sort(function (a, b)
-						{
-							return (b.Download + b.Upload) - (a.Download + a.Upload);
-						});
-						for (var i = 0; i < devices.length && i < 10; i++)
-						{
-							var device = devices[i];
-							//break;
-							sb.push(device.Address.padRight(15, ' ') + ": " + formatBytes(device.Download) + " / " + formatBytes(device.Upload));
-						}
-					}
-					var timeStr = GetTimeStr(params[0].value[0]);
-					return '<div style="white-space: pre-wrap; font-family: Consolas, monospace;">' + timeStr + ': ' + params[0].value[1] + ' Kbps Download<br>'
-						+ ''.padLeft(timeStr.length + 2, ' ') + params[1].value[1] + ' Kbps Upload'
-						+ '<hr style="margin: 0px;">' + sb.join('<br>') + '</div>';
-				},
+				formatter: GetTooltip,
 				axisPointer: {
 					animation: false
 				}
@@ -705,6 +715,15 @@
 		}
 		return this;
 	};
+	String.prototype.setLength = function (len, paddingChar)
+	{
+		if (this.length == len)
+			return this;
+		else if (this.length > len)
+			return this.substr(0, len);
+		else
+			return this.padRight(len, paddingChar);
+	}
 	Number.prototype.padLeft = function (len, c)
 	{
 		return this.toString().padLeft(len, c);
